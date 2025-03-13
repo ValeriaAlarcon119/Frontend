@@ -1,0 +1,103 @@
+<div class="container mt-5">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="text-primary" style="cursor: pointer; text-decoration: underline;" (click)="goBack()">Atrás</span>
+    <span class="text-danger" style="cursor: pointer; text-decoration: underline;" (click)="logout()">Salir</span>
+  </div>
+  <h2 class="text-center">Lista de Candidatos</h2>
+  
+  <div class="text-end mb-3">
+    <button class="btn btn-success" (click)="openCreateForm()" style="border-radius: 50%; width: 30px; height: 30px; padding: 0;">
+      <i class="fas fa-plus text-white" style="font-size: 1rem;"></i>
+    </button>
+    <span class="ms-2" style="font-size: 1.2rem; text-decoration: underline; cursor: pointer;" (click)="openCreateForm()">Nuevo Candidato</span>
+  </div>
+
+  <table class="table table-striped text-center">
+    <thead class="table-dark">
+      <tr>
+        <th>Nombre</th>
+        <th>Documento</th>
+        <th>Correo</th>
+        <th>Teléfono</th>
+        <th>Fecha de Creación</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let candidato of candidatos">
+        <td>{{ candidato.nombre }} {{ candidato.apellido }}</td>
+        <td>{{ candidato.documento_identidad }}</td>
+        <td>{{ candidato.correo }}</td>
+        <td>{{ candidato.telefono }}</td>
+        <td>{{ candidato.created_at | date:'shortDate' }}</td>
+        <td>
+          <i class="fas fa-edit text-primary me-2" (click)="openEditForm(candidato)" style="cursor: pointer;" title="Editar"></i>
+          <i class="fas fa-trash-alt text-danger" (click)="deleteCandidato(candidato.id)" style="cursor: pointer;" title="Eliminar"></i>
+          <i class="fas fa-eye text-info ms-2" (click)="viewDetails(candidato)" style="cursor: pointer;" title="Ver Detalles"></i>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="modal fade" id="candidatoModal" tabindex="-1" aria-labelledby="candidatoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="candidatoModalLabel">{{ isEditMode ? 'Editar Candidato' : 'Nuevo Candidato' }}</h5>
+          <button type="button" class="btn-close" (click)="closeForm()" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form (ngSubmit)="isEditMode ? saveEdit() : createCandidato()">
+            <div class="mb-3">
+              <label class="form-label">Nombre</label>
+              <input type="text" class="form-control" [(ngModel)]="selectedCandidato.nombre" name="nombre" required>
+              <div *ngIf="formSubmitted && errorMessages.nombre" class="text-danger">{{ errorMessages.nombre }}</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Apellido</label>
+              <input type="text" class="form-control" [(ngModel)]="selectedCandidato.apellido" name="apellido" required>
+              <div *ngIf="formSubmitted && errorMessages.apellido" class="text-danger">{{ errorMessages.apellido }}</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Documento Identidad</label>
+              <input type="text" class="form-control" [(ngModel)]="selectedCandidato.documento_identidad" name="documento_identidad" required>
+              <div *ngIf="formSubmitted && errorMessages.documento_identidad" class="text-danger">{{ errorMessages.documento_identidad }}</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Correo</label>
+              <input type="email" class="form-control" [(ngModel)]="selectedCandidato.correo" name="correo" required>
+              <div *ngIf="formSubmitted && errorMessages.correo" class="text-danger">{{ errorMessages.correo }}</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Teléfono</label>
+              <input type="text" class="form-control" [(ngModel)]="selectedCandidato.telefono" name="telefono" required>
+              <div *ngIf="formSubmitted && errorMessages.telefono" class="text-danger">{{ errorMessages.telefono }}</div>
+            </div>
+            <div class="text-center">
+              <button type="submit" class="btn btn-success">{{ isEditMode ? 'Guardar Cambios' : 'Crear Candidato' }}</button>
+              <button type="button" class="btn btn-secondary ms-2" (click)="closeForm()">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="candidatoDetailsModal" tabindex="-1" aria-labelledby="candidatoDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="candidatoDetailsModalLabel">Detalles del Candidato</h5>
+          <button type="button" class="btn-close" (click)="closeDetailsModal()" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Nombre:</strong> {{ selectedCandidato.nombre }} {{ selectedCandidato.apellido }}</p>
+          <p><strong>Documento:</strong> {{ selectedCandidato.documento_identidad }}</p>
+          <p><strong>Correo:</strong> {{ selectedCandidato.correo }}</p>
+          <p><strong>Teléfono:</strong> {{ selectedCandidato.telefono }}</p>
+          <p><strong>Fecha de Creación:</strong> {{ selectedCandidato.created_at | date:'shortDate' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

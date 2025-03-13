@@ -1,0 +1,15 @@
+.table td, .table th {
+    vertical-align: middle;
+}
+
+.btn-link {
+    padding: 0; 
+}
+
+.btn-link:hover {
+    text-decoration: none; 
+}
+
+.float-end {
+    float: right;
+}

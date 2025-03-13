@@ -1,0 +1,38 @@
+<h2 style="text-align: center; margin-top: 40px; margin-bottom: 30px;">Conteo de Solicitudes por Estado</h2>
+
+<div style="display: flex; justify-content: center; gap: 20px; margin-top: 40px;">
+  <div *ngFor="let estado of conteoSolicitudes | keyvalue" 
+       [ngStyle]="{
+         'background-color': estado.key === 'completado' ? '#A3C1DA' : 
+                             estado.key === 'en_proceso' ? '#B0B3B8' : 
+                             estado.key === 'pendiente' ? '#B2E0B2' : '#E0E0E0', 
+         'padding': '20px', 
+         'border-radius': '5px', 
+         'width': '150px', 
+         'text-align': 'center'}">
+    <p style="font-weight: bold;">
+      EN ESTADO {{ estado.key | uppercase }} HAY {{ estado.value }} SOLICITUDES
+    </p>
+  </div>
+</div>
+
+<table class="table table-striped text-center mt-4" style="max-width: 450px; margin: 120px auto;">
+  <thead class="table-dark">
+    <tr>
+      <th>Estado</th>
+      <th>Conteo</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let estado of estados">
+      <td>{{ estado | titlecase }}</td>
+      <td>{{ conteoSolicitudes[estado] || 0 }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="text-center mb-4" style="margin-top: 100px;">
+  <button class="btn btn-outline-primary" (click)="navigateToSolicitudes()" style="margin-right: 15px;">Solicitudes</button>
+  <button class="btn btn-outline-primary" (click)="navigateToCandidatos()" style="margin-right: 15px;">Candidatos</button>
+  <button class="btn btn-outline-primary" (click)="navigateToTiposEstudio()">Tipos de Estudio</button>
+</div>
