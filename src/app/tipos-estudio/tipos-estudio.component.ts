@@ -12,13 +12,13 @@ import { Modal } from 'bootstrap';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './tipos-estudio.component.html',
-
 })
 export class TiposEstudioComponent implements OnInit {
   tiposEstudio: TipoEstudio[] = [];
   selectedTipoEstudio: TipoEstudio = { id: 0, nombre: '', descripcion: '', precio: 0 };
   isEditMode = false;
   isFormVisible = false;
+  errorMessage: string = '';
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -48,6 +48,7 @@ export class TiposEstudioComponent implements OnInit {
     this.isFormVisible = false;
     this.hideModal();
   }
+
   goBack() {
     this.router.navigate(['/dashboard']);
   }
@@ -55,6 +56,7 @@ export class TiposEstudioComponent implements OnInit {
   logout() {
     this.router.navigate(['/login']);
   }
+
   showModal(): void {
     const modalElement = document.getElementById('tipoEstudioModal');
     if (modalElement) {
@@ -107,16 +109,20 @@ export class TiposEstudioComponent implements OnInit {
 
   deleteTipoEstudio(id: number): void {
     if (confirm('¿Seguro que deseas eliminar este tipo de estudio?')) {
-      this.http.delete(`${environment.api_url}/tipos-estudio/${id}`).subscribe({
-        next: () => {
-          this.loadTiposEstudio();
-        },
-        error: (error) => {
-          console.error('Error al eliminar tipo de estudio', error);
-        }
-      });
+        this.http.delete(`${environment.api_url}/tipos-estudio/${id}`).subscribe({
+            next: () => {
+                this.loadTiposEstudio();
+            },
+            error: (error) => {
+                if (error.status === 422) {
+                    this.errorMessage = 'No se puede eliminar este tipo de estudio porque está en uso en la aplicación.';
+                } else {
+                    this.errorMessage = 'Ocurrió un error al intentar eliminar el tipo de estudio.';
+                }
+            }
+        });
     }
-  }
+}
 
   viewDetails(tipoEstudio: TipoEstudio): void {
     this.selectedTipoEstudio = { ...tipoEstudio };

@@ -46,13 +46,28 @@ export class LoginComponent implements OnInit {
       return;
     }
 
-    this.http.post('http://localhost:8000/api/auth/login', { email: this.email, password: this.password })
-      .subscribe((response: any) => {
+    this.http.post('http://localhost:8000/api/auth/login', {
+      email: this.loginForm.get('email')?.value,
+      password: this.loginForm.get('password')?.value
+    }).subscribe({
+      next: (response: any) => {
+        console.log('Inicio de sesión exitoso', response);
         localStorage.setItem('token', response.token);
         this.router.navigate(['/dashboard']);
-      }, error => {
+      },
+      error: (error) => {
         console.error('Error de inicio de sesión', error);
-      });
+        if (error.status === 401) {
+          this.errorMessage = 'Credenciales incorrectas. Por favor, verifica tu correo y contraseña.';
+        } else if (error.status === 404) {
+          this.errorMessage = 'Este usuario o correo no existe.';
+        } else if (error.status === 422) {
+          this.errorMessage = 'Contraseña incorrecta. Intenta nuevamente.';
+        } else {
+          this.errorMessage = 'Error de inicio de sesión. Por favor, intenta más tarde.';
+        }
+      }
+    });
   }
 
   openRegisterForm(): void {

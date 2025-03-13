@@ -12,6 +12,8 @@
     <span class="ms-2" style="font-size: 1.2rem; text-decoration: underline; cursor: pointer;" (click)="openCreateForm()">Nuevo Tipo de Estudio</span>
   </div>
 
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
   <table class="table table-striped text-center">
     <thead class="table-dark">
       <tr>

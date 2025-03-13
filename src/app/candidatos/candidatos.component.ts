@@ -137,17 +137,17 @@ export class CandidatosComponent implements OnInit {
       });
   }
 
-  deleteCandidato(id: number) {
+  deleteCandidato(id: number): void {
     if (confirm('¿Seguro que deseas eliminar este candidato?')) {
-      this.http.delete(`http://localhost:8000/api/candidatos/${id}`)
-        .subscribe({
-          next: () => {
-            this.loadCandidatos();
-          },
-          error: (error) => {
-            console.error('Error al eliminar candidato', error);
-          }
-        });
+      this.http.delete(`http://localhost:8000/api/candidatos/${id}`).subscribe({
+        next: () => {
+          this.loadCandidatos();
+        },
+        error: (error) => {
+          console.error('Error al eliminar candidato', error);
+          alert(error.error.message);
+        }
+      });
     }
   }
 
