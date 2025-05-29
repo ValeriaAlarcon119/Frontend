@@ -1,374 +1,766 @@
-import { Component, OnInit } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { Component, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-
-import { Modal } from 'bootstrap';
+import { RouterModule } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
+import { MatTableModule } from '@angular/material/table';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDialogModule, MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { SolicitudService } from '../services/solicitud.service';
+import { CandidatoService } from '../services/candidato.service';
+import { TipoEstudioService } from '../services/tipo-estudio.service';
 
 @Component({
   selector: 'app-solicitudes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    RouterModule,
+    MatCardModule,
+    MatTableModule,
+    MatButtonModule,
+    MatIconModule,
+    MatMenuModule,
+    MatDialogModule,
+    MatSnackBarModule,
+    MatProgressSpinnerModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    ReactiveFormsModule
+  ],
   template: `
-    <div class="container mt-5">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <span class="text-primary" style="cursor: pointer; text-decoration: underline;" (click)="goBack()">Atrás</span>
-        <span class="text-danger" style="cursor: pointer; text-decoration: underline;" (click)="logout()">Salir</span>
-      </div>
-      <h2 class="text-center">Listado de Solicitudes</h2>
-      
-      <div class="text-center mb-3">
-        <label>
-          <input type="checkbox" [(ngModel)]="isFilterActive" (change)="toggleFilters()" />
-          Filtro
-        </label>
-        <i class="fas fa-plus-circle text-success ms-3" (click)="openCreateForm()" style="cursor: pointer; font-size: 1.2rem;" title="Agregar Solicitud"></i>
-        <span class="text-success ms-2" (click)="openCreateForm()" style="cursor: pointer; text-decoration: underline; font-size: 0.9rem;" title="Nueva Solicitud">Nueva Solicitud</span>
+    <div class="solicitudes-container">
+      <div class="header">
+        <h1>Solicitudes</h1>
+        <button mat-raised-button color="primary" (click)="abrirDialogoNuevaSolicitud()" class="new-button">
+          <mat-icon>add</mat-icon>
+          Nueva Solicitud
+        </button>
       </div>
 
-      <div *ngIf="isFilterActive" class="d-flex justify-content-center align-items-center mb-3" style="gap: 10px;">
-        <div class="me-2" style="flex: 1; max-width: 150px;">
-          <label for="estado" class="form-label" style="font-size: 0.9rem;">Estado:</label>
-          <select id="estado" [(ngModel)]="selectedEstado" (change)="loadSolicitudes()" class="form-select form-select-sm">
-            <option value="">Todos</option>
-            <option *ngFor="let estado of estados" [value]="estado">{{ estado | titlecase }}</option>
-          </select>
-        </div>
-        <div style="flex: 1; max-width: 150px;">
-          <label for="tipoEstudio" class="form-label" style="font-size: 0.9rem;">Tipo de Estudio:</label>
-          <select id="tipoEstudio" [(ngModel)]="selectedTipoEstudio" (change)="loadSolicitudes()" class="form-select form-select-sm">
-            <option value="">Todos</option>
-            <option *ngFor="let tipo of tipoEstudios" [value]="tipo.id">{{ tipo.nombre }}</option>
-          </select>
-        </div>
-      </div>
+      <mat-card class="table-card">
+        <mat-card-content>
+          <div class="table-container">
+            <table mat-table [dataSource]="solicitudes" class="mat-elevation-z0">
+              <!-- ID Column -->
+              <ng-container matColumnDef="id">
+                <th mat-header-cell *matHeaderCellDef>ID</th>
+                <td mat-cell *matCellDef="let solicitud">{{solicitud.id}}</td>
+              </ng-container>
 
-      <table class="table table-striped text-center" style="max-width: 600px; margin: 0 auto;">
-        <thead class="table-dark">
-          <tr>
-            <th>Estado</th>
-            <th>Tipo de Estudio</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let solicitud of solicitudes">
-            <td>{{ getEstadoNombre(solicitud.estado) }}</td>
-            <td>{{ getTipoEstudioNombre(solicitud.tipo_estudio_id) }}</td>
-            <td>
-              <i class="fas fa-edit text-primary me-2" (click)="openEditForm(solicitud)" style="cursor: pointer;"></i>
-              <i class="fas fa-trash-alt text-danger" (click)="deleteSolicitud(solicitud.id)" style="cursor: pointer;"></i>
-              <i class="fas fa-eye text-info ms-2" (click)="viewDetails(solicitud)" style="cursor: pointer;" title="Ver Detalles"></i>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              <!-- Candidato Column -->
+              <ng-container matColumnDef="candidato">
+                <th mat-header-cell *matHeaderCellDef>Candidato</th>
+                <td mat-cell *matCellDef="let solicitud">
+                  <div class="candidato-cell">
+                    <mat-icon class="cell-icon">person</mat-icon>
+                    {{solicitud.candidato?.nombre || 'Sin candidato'}}
+                  </div>
+                </td>
+              </ng-container>
 
-      <!-- Modal para Editar o Crear Solicitud -->
-      <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true" [ngClass]="{'show': isEditMode || isCreateMode}" style="display: (isEditMode || isCreateMode ? 'block' : 'none');">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="editModalLabel">{{ isEditMode ? 'Editar Solicitud' : 'Crear Nueva Solicitud' }}</h5>
-              <button type="button" class="btn-close" (click)="closeForm()" aria-label="Close"></button>
+              <!-- Tipo de Estudio Column -->
+              <ng-container matColumnDef="tipo_estudio">
+                <th mat-header-cell *matHeaderCellDef>Tipo de Estudio</th>
+                <td mat-cell *matCellDef="let solicitud">
+                  <div class="tipo-cell">
+                    <mat-icon class="cell-icon">school</mat-icon>
+                    {{solicitud.tipo_estudio?.nombre || 'Sin tipo'}}
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Estado Column -->
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let solicitud">
+                  <span class="estado-badge" [ngClass]="solicitud.estado">
+                    <mat-icon class="estado-icon">{{getEstadoIcon(solicitud.estado)}}</mat-icon>
+                    {{formatEstado(solicitud.estado)}}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Fecha Column -->
+              <ng-container matColumnDef="fecha">
+                <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                <td mat-cell *matCellDef="let solicitud">
+                  <div class="fecha-cell">
+                    <mat-icon class="cell-icon">event</mat-icon>
+                    {{solicitud.created_at | date:'medium'}}
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                <td mat-cell *matCellDef="let solicitud">
+                  <div class="actions-cell">
+                    <button mat-icon-button color="primary" (click)="editarSolicitud(solicitud)" matTooltip="Editar">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="eliminarSolicitud(solicitud)" matTooltip="Eliminar">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns" class="mat-header-row"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="mat-row"></tr>
+            </table>
+
+            <div class="loading-shade" *ngIf="loading">
+              <mat-spinner></mat-spinner>
             </div>
-            <div class="modal-body">
-              <form (ngSubmit)="isEditMode ? saveEdit() : createSolicitud()" #solicitudForm="ngForm">
-                <div class="mb-3">
-                  <label for="candidato">Seleccionar Candidato:</label>
-                  <select id="candidato" [(ngModel)]="selectedCandidato" name="candidato" required class="form-select">
-                    <option value=""></option>
-                    <option *ngFor="let candidato of candidatos" [value]="candidato.id">{{ candidato.nombre }} {{ candidato.apellido }}</option>
-                  </select>
-                  <div *ngIf="!selectedCandidato && formSubmitted" class="text-danger">El candidato es requerido.</div>
-                </div>
-                <div class="mb-3">
-                  <label for="tipoEstudio">Seleccionar Tipo de Estudio:</label>
-                  <select id="tipoEstudio" [(ngModel)]="selectedTipoEstudio" name="tipoEstudio" required class="form-select">
-                    <option value=""></option>
-                    <option *ngFor="let tipo of tipoEstudios" [value]="tipo.id">{{ tipo.nombre }}</option>
-                  </select>
-                  <div *ngIf="!selectedTipoEstudio && formSubmitted" class="text-danger">El tipo de estudio es requerido.</div>
-                </div>
-                <div class="mb-3">
-                  <label for="estado">Seleccionar Estado:</label>
-                  <select id="estado" [(ngModel)]="selectedEstado" name="estado" required class="form-select">
-                    <option value=""></option>
-                    <option value="pendiente">Pendiente</option>
-                    <option value="en_proceso">En Proceso</option>
-                    <option value="completado">Completado</option>
-                  </select>
-                  <div *ngIf="!selectedEstado && formSubmitted" class="text-danger">El estado es requerido.</div>
-                </div>
-                <div class="mb-3">
-                  <label for="fechaSolicitud">Fecha de Solicitud:</label>
-                  <input type="date" id="fechaSolicitud" [(ngModel)]="selectedSolicitud.fecha_solicitud" name="fechaSolicitud" class="form-control">
-                </div>
-                <div class="mb-3">
-                  <label for="fechaCompletado">Fecha de Completado:</label>
-                  <input type="date" id="fechaCompletado" [(ngModel)]="selectedSolicitud.fecha_completado" name="fechaCompletado" class="form-control">
-                </div>
-                <div class="text-center">
-                  <button type="submit" class="btn btn-success">{{ isEditMode ? 'Guardar Cambios' : 'Crear Solicitud' }}</button>
-                  <button type="button" class="btn btn-secondary" (click)="closeForm()">Cancelar</button>
-                </div>
-              </form>
+
+            <div class="no-data" *ngIf="!loading && solicitudes.length === 0">
+              <mat-icon>inbox</mat-icon>
+              <p>No hay solicitudes registradas</p>
+              <button mat-raised-button color="primary" (click)="abrirDialogoNuevaSolicitud()">
+                <mat-icon>add</mat-icon>
+                Crear Primera Solicitud
+              </button>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Modal para Mostrar Detalles de la Solicitud -->
-      <div class="modal fade" id="solicitudDetailsModal" tabindex="-1" aria-labelledby="solicitudDetailsModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="solicitudDetailsModalLabel">Detalles de la Solicitud</h5>
-              <button type="button" class="btn-close" (click)="closeDetailsModal()" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <p><strong>Candidato:</strong> {{ getCandidatoNombre(selectedSolicitud.candidato_id) }}</p>
-              <p><strong>Tipo de Estudio:</strong> {{ getTipoEstudioNombre(selectedSolicitud.tipo_estudio_id) }}</p>
-              <p><strong>Estado:</strong> {{ getEstadoNombre(selectedSolicitud.estado) }}</p>
-              <p><strong>Fecha de Solicitud:</strong> {{ selectedSolicitud.fecha_solicitud | date:'shortDate' }}</p>
-              <p><strong>Fecha de Completado:</strong> {{ selectedSolicitud.fecha_completado | date:'shortDate' }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+        </mat-card-content>
+      </mat-card>
     </div>
   `,
   styles: [`
-    .container {
-      margin-top: 20px;
+    :host {
+      --primary-color: #2c3e50;
+      --secondary-color: #34495e;
+      --accent-color: #3498db;
+      --success-color: #2ecc71;
+      --warning-color: #f1c40f;
+      --danger-color: #e74c3c;
+      --text-primary: #2c3e50;
+      --text-secondary: #7f8c8d;
+      --border-color: #ecf0f1;
+      --hover-color: #f8f9fa;
+      --shadow-color: rgba(0, 0, 0, 0.1);
     }
-    .modal.show {
-      display: block;
-      background: rgba(0, 0, 0, 0.5);
+
+    .solicitudes-container {
+      padding: 24px;
+      background-color: #f5f6fa;
+      min-height: 100vh;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      margin: 0;
+      color: var(--primary-color);
+      font-size: 2rem;
+      font-weight: 600;
+    }
+
+    .new-button {
+      background: linear-gradient(135deg, var(--accent-color), #2980b9);
+      color: white;
+      padding: 8px 24px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .new-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px var(--shadow-color);
+    }
+
+    .table-card {
+      border-radius: 12px;
+      box-shadow: 0 4px 6px var(--shadow-color) !important;
+      overflow: hidden;
+    }
+
+    .table-container {
+      position: relative;
+      min-height: 200px;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+    }
+
+    .mat-header-row {
+      background-color: #f8f9fa;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .mat-header-cell {
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 14px;
+      padding: 16px;
+    }
+
+    .mat-row {
+      transition: background-color 0.3s ease;
+    }
+
+    .mat-row:hover {
+      background-color: var(--hover-color);
+    }
+
+    .mat-cell {
+      padding: 16px;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .candidato-cell, .tipo-cell, .fecha-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cell-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: var(--accent-color);
+    }
+
+    .estado-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+
+    .estado-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+
+    .estado-badge.pendiente {
+      background-color: #FFF3E0;
+      color: #E65100;
+    }
+
+    .estado-badge.en_proceso {
+      background-color: #E3F2FD;
+      color: #1565C0;
+    }
+
+    .estado-badge.completado {
+      background-color: #E8F5E9;
+      color: #2E7D32;
+    }
+
+    .estado-badge.cancelado {
+      background-color: #FFEBEE;
+      color: #C62828;
+    }
+
+    .estado-badge.rechazado {
+      background-color: #FCE4EC;
+      color: #C2185B;
+    }
+
+    .actions-cell {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-start;
+    }
+
+    .loading-shade {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.8);
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .no-data {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .no-data mat-icon {
+      font-size: 64px;
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      color: var(--accent-color);
+      opacity: 0.5;
+    }
+
+    .no-data p {
+      margin: 0 0 24px 0;
+      font-size: 1.1rem;
+    }
+
+    @media (max-width: 600px) {
+      .solicitudes-container {
+        padding: 16px;
+      }
+
+      .header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+      }
+
+      .header button {
+        width: 100%;
+      }
+
+      .mat-mdc-table {
+        display: block;
+        overflow-x: auto;
+      }
+
+      .mat-cell {
+        padding: 12px;
+      }
+
+      .estado-badge {
+        padding: 4px 8px;
+      }
     }
   `]
 })
 export class SolicitudesComponent implements OnInit {
   solicitudes: any[] = [];
   candidatos: any[] = [];
-  tipoEstudios: any[] = [];
-  estados: string[] = ['pendiente', 'en_proceso', 'completado'];
-  selectedEstado: string = '';
-  selectedTipoEstudio: string = '';
-  selectedCandidato: number | null = null;
-  isEditMode: boolean = false; 
-  isCreateMode: boolean = false; 
-  selectedSolicitud: any = {
-    candidato_id: null,
-    tipo_estudio_id: null,
-    estado: '',
-    fecha_solicitud: null,
-    fecha_completado: null
-  }; 
-  formSubmitted: boolean = false; 
-  isFilterActive: boolean = false;
+  tiposEstudio: any[] = [];
+  displayedColumns: string[] = ['id', 'candidato', 'tipo_estudio', 'estado', 'fecha', 'actions'];
+  loading = false;
+  solicitudForm: FormGroup;
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private solicitudService: SolicitudService,
+    private candidatoService: CandidatoService,
+    private tipoEstudioService: TipoEstudioService,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar,
+    private fb: FormBuilder
+  ) {
+    this.solicitudForm = this.fb.group({
+      candidato_id: ['', Validators.required],
+      tipo_estudio_id: ['', Validators.required],
+      estado: ['pendiente', Validators.required]
+    });
+  }
 
   ngOnInit(): void {
-    this.loadSolicitudes();
-    this.loadCandidatos();
-    this.loadTipoEstudios();
+    this.cargarDatos();
   }
 
-  toggleFilters(): void {
-    if (!this.isFilterActive) {
-      this.selectedEstado = '';
-      this.selectedTipoEstudio = '';
-    }
-    this.loadSolicitudes();
-  }
-
-  loadSolicitudes(): void {
-    let params = new HttpParams();
-    if (this.isFilterActive) {
-      if (this.selectedEstado) params = params.set('estado', this.selectedEstado);
-      if (this.selectedTipoEstudio) params = params.set('tipo_estudio_id', this.selectedTipoEstudio.toString());
-    }
-
-    this.http.get<any[]>('http://localhost:8000/api/solicitudes', { params }).subscribe({
-      next: (data) => {
-        this.solicitudes = data;
-      },
-      error: (error) => {
-        console.error('Error al cargar solicitudes', error);
-      }
+  private cargarDatos(): void {
+    this.loading = true;
+    Promise.all([
+      this.cargarSolicitudes(),
+      this.cargarCandidatos(),
+      this.cargarTiposEstudio()
+    ]).finally(() => {
+      this.loading = false;
     });
   }
 
-  loadCandidatos(): void {
-    this.http.get<any[]>('http://localhost:8000/api/candidatos').subscribe({
-      next: (data) => {
-        this.candidatos = data;
-      },
-      error: (error) => {
-        console.error('Error al cargar candidatos', error);
-      }
-    });
-  }
-
-  loadTipoEstudios(): void {
-    this.http.get<any[]>('http://localhost:8000/api/tipos-estudio').subscribe({
-      next: (data) => {
-        this.tipoEstudios = data;
-      },
-      error: (error) => {
-        console.error('Error al cargar tipos de estudio', error);
-      }
-    });
-  }
-
-  openEditForm(solicitud: any): void {
-    this.isEditMode = true;
-    this.isCreateMode = false; 
-    this.selectedSolicitud = solicitud; 
-    this.selectedCandidato = solicitud.candidato_id; 
-    this.selectedTipoEstudio = solicitud.tipo_estudio_id; 
-    this.selectedEstado = solicitud.estado; 
-  }
-
-  openCreateForm(): void {
-    this.isCreateMode = true; 
-    this.isEditMode = false; 
-    this.selectedCandidato = null;
-    this.selectedTipoEstudio = ''; 
-    this.selectedEstado = ''; 
-  }
-
-  saveEdit(): void { 
-    const updatedSolicitud = {
-      candidato_id: this.selectedCandidato,
-      tipo_estudio_id: this.selectedTipoEstudio,
-      estado: this.selectedEstado,
-      fecha_solicitud: this.selectedSolicitud.fecha_solicitud,
-      fecha_completado: this.selectedSolicitud.fecha_completado
-    };
-
-    this.http.put(`http://localhost:8000/api/solicitudes/${this.selectedSolicitud.id}`, updatedSolicitud).subscribe({
-      next: (response) => {
-        console.log('Solicitud actualizada con éxito', response);
-        this.resetFilters();
-        this.loadSolicitudes(); 
-        this.closeForm(); 
-      },
-      error: (error) => {
-        console.error('Error al actualizar solicitud', error);
-      }
-    });
-  }
-
-  createSolicitud(): void {
-    this.formSubmitted = true; 
-    const newSolicitud = {
-      candidato_id: this.selectedCandidato,
-      tipo_estudio_id: this.selectedTipoEstudio,
-      estado: this.selectedEstado,
-      fecha_solicitud: this.selectedSolicitud.fecha_solicitud,
-      fecha_completado: this.selectedSolicitud.fecha_completado
-    };
-
-    this.http.post('http://localhost:8000/api/solicitudes', newSolicitud).subscribe({
-      next: (response) => {
-        console.log('Solicitud creada con éxito', response);
-        this.resetFilters(); 
-        this.loadSolicitudes(); 
-        this.closeForm(); 
-      },
-      error: (error) => {
-        console.error('Error al crear solicitud', error);
-      }
-    });
-  }
-
-  resetFilters(): void {
-    this.selectedEstado = ''; 
-    this.selectedTipoEstudio = ''; 
-  }
-
-  closeForm(): void {
-    this.isEditMode = false;
-    this.isCreateMode = false; 
-    this.selectedCandidato = null;
-    this.selectedTipoEstudio = ''; 
-    this.selectedEstado = '';
-    this.selectedSolicitud = {
-      candidato_id: null,
-      tipo_estudio_id: null,
-      estado: '',
-      fecha_solicitud: null,
-      fecha_completado: null
-    }; 
-    this.formSubmitted = false; 
-  }
-
-  deleteSolicitud(id: number): void {
-    if (confirm('¿Seguro que deseas eliminar esta solicitud?')) {
-      this.http.delete(`http://localhost:8000/api/solicitudes/${id}`).subscribe({
-        next: () => {
-          this.loadSolicitudes();
+  private cargarSolicitudes(): Promise<void> {
+    return new Promise((resolve) => {
+      this.solicitudService.getSolicitudes().subscribe({
+        next: (solicitudes) => {
+          this.solicitudes = solicitudes;
+          resolve();
         },
         error: (error) => {
-          console.error('Error al eliminar solicitud', error);
+          this.showError('Error al cargar las solicitudes');
+          resolve();
+        }
+      });
+    });
+  }
+
+  private cargarCandidatos(): Promise<void> {
+    return new Promise((resolve) => {
+      this.candidatoService.getCandidatos().subscribe({
+        next: (candidatos) => {
+          this.candidatos = candidatos;
+          resolve();
+        },
+        error: (error) => {
+          this.showError('Error al cargar los candidatos');
+          resolve();
+        }
+      });
+    });
+  }
+
+  private cargarTiposEstudio(): Promise<void> {
+    return new Promise((resolve) => {
+      this.tipoEstudioService.getTiposEstudio().subscribe({
+        next: (tipos) => {
+          this.tiposEstudio = tipos;
+          resolve();
+        },
+        error: (error) => {
+          this.showError('Error al cargar los tipos de estudio');
+          resolve();
+        }
+      });
+    });
+  }
+
+  abrirDialogoNuevaSolicitud(): void {
+    const dialogRef = this.dialog.open(NuevaSolicitudDialogComponent, {
+      width: '500px',
+      data: {
+        candidatos: this.candidatos,
+        tiposEstudio: this.tiposEstudio
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.cargarSolicitudes();
+      }
+    });
+  }
+
+  editarSolicitud(solicitud: any): void {
+    const dialogRef = this.dialog.open(EditarSolicitudDialogComponent, {
+      width: '500px',
+      data: {
+        solicitud,
+        candidatos: this.candidatos,
+        tiposEstudio: this.tiposEstudio
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.cargarSolicitudes();
+      }
+    });
+  }
+
+  eliminarSolicitud(solicitud: any): void {
+    if (confirm('¿Está seguro de eliminar esta solicitud?')) {
+      this.solicitudService.deleteSolicitud(solicitud.id).subscribe({
+        next: () => {
+          this.showSuccess('Solicitud eliminada correctamente');
+          this.cargarSolicitudes();
+        },
+        error: (error) => {
+          this.showError('Error al eliminar la solicitud');
         }
       });
     }
   }
 
-  getEstadoNombre(estado: string): string {
-    switch (estado) {
-      case 'pendiente':
-        return 'Pendiente';
-      case 'en_proceso':
-        return 'En Proceso';
-      case 'completado':
-        return 'Completado';
-      default:
-        return 'Desconocido';
+  getEstadoIcon(estado: string): string {
+    const iconos: Record<string, string> = {
+      'pendiente': 'schedule',
+      'en_proceso': 'pending_actions',
+      'completado': 'check_circle',
+      'cancelado': 'cancel',
+      'rechazado': 'block'
+    };
+    return iconos[estado] || 'help';
+  }
+
+  formatEstado(estado: string): string {
+    const estados: Record<string, string> = {
+      'pendiente': 'Pendiente',
+      'en_proceso': 'En Proceso',
+      'completado': 'Completado',
+      'cancelado': 'Cancelado',
+      'rechazado': 'Rechazado'
+    };
+    return estados[estado] || estado;
+  }
+
+  private showError(message: string): void {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 5000,
+      horizontalPosition: 'center',
+      verticalPosition: 'top',
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private showSuccess(message: string): void {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 3000,
+      horizontalPosition: 'center',
+      verticalPosition: 'top',
+      panelClass: ['success-snackbar']
+    });
+  }
+}
+
+@Component({
+  selector: 'app-nueva-solicitud-dialog',
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    ReactiveFormsModule
+  ],
+  template: `
+    <h2 mat-dialog-title>Nueva Solicitud</h2>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <mat-dialog-content>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Candidato</mat-label>
+          <mat-select formControlName="candidato_id">
+            <mat-option *ngFor="let candidato of data.candidatos" [value]="candidato.id">
+              {{candidato.nombre}}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('candidato_id')?.hasError('required')">
+            El candidato es requerido
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Tipo de Estudio</mat-label>
+          <mat-select formControlName="tipo_estudio_id">
+            <mat-option *ngFor="let tipo of data.tiposEstudio" [value]="tipo.id">
+              {{tipo.nombre}}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('tipo_estudio_id')?.hasError('required')">
+            El tipo de estudio es requerido
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="estado">
+            <mat-option value="pendiente">Pendiente</mat-option>
+            <mat-option value="en_proceso">En Proceso</mat-option>
+            <mat-option value="completado">Completado</mat-option>
+            <mat-option value="cancelado">Cancelado</mat-option>
+            <mat-option value="rechazado">Rechazado</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </mat-dialog-content>
+
+      <mat-dialog-actions align="end">
+        <button mat-button type="button" (click)="onCancel()">Cancelar</button>
+        <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">
+          Crear Solicitud
+        </button>
+      </mat-dialog-actions>
+    </form>
+  `,
+  styles: [`
+    mat-dialog-content {
+      padding: 20px;
+    }
+
+    .full-width {
+      width: 100%;
+      margin-bottom: 16px;
+    }
+
+    mat-form-field {
+      margin-bottom: 16px;
+    }
+
+    mat-dialog-actions {
+      padding: 16px;
+      gap: 8px;
+    }
+  `]
+})
+export class NuevaSolicitudDialogComponent {
+  form: FormGroup;
+
+  constructor(
+    public dialogRef: MatDialogRef<NuevaSolicitudDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: any,
+    private fb: FormBuilder,
+    private solicitudService: SolicitudService,
+    private snackBar: MatSnackBar
+  ) {
+    this.form = this.fb.group({
+      candidato_id: ['', Validators.required],
+      tipo_estudio_id: ['', Validators.required],
+      estado: ['pendiente', Validators.required]
+    });
+  }
+
+  onSubmit(): void {
+    if (this.form.valid) {
+      this.solicitudService.createSolicitud(this.form.value).subscribe({
+        next: () => {
+          this.snackBar.open('Solicitud creada correctamente', 'Cerrar', {
+            duration: 3000
+          });
+          this.dialogRef.close(true);
+        },
+        error: (error) => {
+          this.snackBar.open('Error al crear la solicitud', 'Cerrar', {
+            duration: 5000
+          });
+        }
+      });
     }
   }
 
-  getTipoEstudioNombre(tipoEstudioId: number): string {
-    const tipoEstudio = this.tipoEstudios.find(tipo => tipo.id === tipoEstudioId);
-    return tipoEstudio ? tipoEstudio.nombre : 'Desconocido';
+  onCancel(): void {
+    this.dialogRef.close();
+  }
+}
+
+@Component({
+  selector: 'app-editar-solicitud-dialog',
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    ReactiveFormsModule
+  ],
+  template: `
+    <h2 mat-dialog-title>Editar Solicitud</h2>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <mat-dialog-content>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Candidato</mat-label>
+          <mat-select formControlName="candidato_id">
+            <mat-option *ngFor="let candidato of data.candidatos" [value]="candidato.id">
+              {{candidato.nombre}}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('candidato_id')?.hasError('required')">
+            El candidato es requerido
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Tipo de Estudio</mat-label>
+          <mat-select formControlName="tipo_estudio_id">
+            <mat-option *ngFor="let tipo of data.tiposEstudio" [value]="tipo.id">
+              {{tipo.nombre}}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('tipo_estudio_id')?.hasError('required')">
+            El tipo de estudio es requerido
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="estado">
+            <mat-option value="pendiente">Pendiente</mat-option>
+            <mat-option value="en_proceso">En Proceso</mat-option>
+            <mat-option value="completado">Completado</mat-option>
+            <mat-option value="cancelado">Cancelado</mat-option>
+            <mat-option value="rechazado">Rechazado</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </mat-dialog-content>
+
+      <mat-dialog-actions align="end">
+        <button mat-button type="button" (click)="onCancel()">Cancelar</button>
+        <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">
+          Guardar Cambios
+        </button>
+      </mat-dialog-actions>
+    </form>
+  `,
+  styles: [`
+    mat-dialog-content {
+      padding: 20px;
+    }
+
+    .full-width {
+      width: 100%;
+      margin-bottom: 16px;
+    }
+
+    mat-form-field {
+      margin-bottom: 16px;
+    }
+
+    mat-dialog-actions {
+      padding: 16px;
+      gap: 8px;
+    }
+  `]
+})
+export class EditarSolicitudDialogComponent {
+  form: FormGroup;
+
+  constructor(
+    public dialogRef: MatDialogRef<EditarSolicitudDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: any,
+    private fb: FormBuilder,
+    private solicitudService: SolicitudService,
+    private snackBar: MatSnackBar
+  ) {
+    this.form = this.fb.group({
+      candidato_id: [data.solicitud.candidato_id, Validators.required],
+      tipo_estudio_id: [data.solicitud.tipo_estudio_id, Validators.required],
+      estado: [data.solicitud.estado, Validators.required]
+    });
   }
 
-  viewDetails(solicitud: any): void {
-    this.selectedSolicitud = { ...solicitud };
-    this.showDetailsModal();
-  }
-
-  showDetailsModal(): void {
-    const modalElement = document.getElementById('solicitudDetailsModal');
-    if (modalElement) {
-      const modal = new Modal(modalElement);
-      modal.show();
+  onSubmit(): void {
+    if (this.form.valid) {
+      this.solicitudService.updateSolicitud(this.data.solicitud.id, this.form.value).subscribe({
+        next: () => {
+          this.snackBar.open('Solicitud actualizada correctamente', 'Cerrar', {
+            duration: 3000
+          });
+          this.dialogRef.close(true);
+        },
+        error: (error) => {
+          this.snackBar.open('Error al actualizar la solicitud', 'Cerrar', {
+            duration: 5000
+          });
+        }
+      });
     }
   }
 
-  closeDetailsModal(): void {
-    const modalElement = document.getElementById('solicitudDetailsModal');
-    if (modalElement) {
-      const modal = Modal.getInstance(modalElement);
-      modal?.hide();
-    }
-  }
-
-  getCandidatoNombre(candidatoId: number): string {
-    const candidato = this.candidatos.find(c => c.id === candidatoId);
-    return candidato ? `${candidato.nombre} ${candidato.apellido}` : 'Desconocido';
-  }
-
-  goBack(): void {
-    this.router.navigate(['/dashboard']);
-  }
-
-  logout(): void {
-    this.router.navigate(['/login']);
+  onCancel(): void {
+    this.dialogRef.close();
   }
 }

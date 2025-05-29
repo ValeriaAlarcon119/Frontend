@@ -17,9 +17,60 @@ npm install -g @angular/cli
 ```
 
 
-## Instalación
+## Guía de Configuración Completa
 
-1. **Clonar el Repositorio**:
+### Configuración del Backend
+
+1. **Clonar el Repositorio del Backend**:
+   ```bash
+   git clone https://github.com/ValeriaAlarcon119/Backend.git
+   cd Backend
+   ```
+
+2. **Instalar Dependencias**:
+   Asegúrate de tener Composer instalado y ejecuta:
+   ```bash
+   composer install
+   ```
+
+3. **Configurar el Archivo `.env`**:
+   Copia el archivo `.env.example` a `.env` y configura la conexión a la base de datos:
+   ```bash
+   cp .env.example .env
+   ```
+   Asegúrate de que las siguientes líneas estén configuradas correctamente:
+   ```env
+   DB_CONNECTION=sqlite
+   DB_DATABASE=UbicacionRepositorioClonado/Backend/database/database.sqlite
+   ```
+
+4. **Generar Clave de Aplicación**:
+   ```bash
+   php artisan key:generate
+   ```
+
+5. **Configurar CORS y Sanctum**:
+   Asegúrate de que el middleware de CORS esté habilitado en `app/Http/Kernel.php` y que Sanctum esté configurado en tu archivo `.env`:
+   ```env
+   SANCTUM_STATEFUL_DOMAINS=localhost:4200
+   SESSION_DRIVER=cookie
+   ```
+
+6. **Migrar la Base de Datos**:
+   Ejecuta las migraciones para crear las tablas necesarias:
+   ```bash
+   php artisan migrate --seed
+   ```
+
+7. **Iniciar el Servidor**:
+   ```bash
+   php artisan serve
+   ```
+   El backend estará disponible en `http://localhost:8000`.
+
+### Configuración del Frontend
+
+1. **Clonar el Repositorio del Frontend**:
    ```bash
    git clone https://github.com/ValeriaAlarcon119/Frontend.git
    cd Frontend
@@ -36,8 +87,11 @@ npm install -g @angular/cli
    ```bash
    ng serve
    ```
-
    La aplicación estará disponible en `http://localhost:4200`.
+
+### Notas Adicionales
+- Asegúrate de que el backend esté corriendo y accesible en `http://localhost:8000` para que el frontend funcione correctamente.
+- Sigue todos los pasos de instalación y configuración para garantizar que la aplicación funcione sin problemas.
 
 ## Funcionalidades
 - Registro y autenticación de usuarios.

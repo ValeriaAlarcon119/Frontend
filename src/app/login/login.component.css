@@ -2,3 +2,67 @@
 .container {
     margin-top: 20px;
 }
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  padding: 20px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+  border-radius: var(--border-radius);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.text-center {
+  text-align: center;
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.form-actions button {
+  min-width: 200px;
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 20px;
+  color: var(--text-color);
+}
+
+mat-card-title {
+  font-size: 24px;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.mat-mdc-card-header {
+  justify-content: center;
+  padding: 16px 0;
+}
+
+.mat-mdc-card-content {
+  padding: 0 16px;
+}

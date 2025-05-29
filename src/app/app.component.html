@@ -1,1 +1,59 @@
-<router-outlet />
+<mat-sidenav-container class="sidenav-container">
+  <mat-sidenav #drawer class="sidenav" fixedInViewport
+      [mode]="'side'"
+      [opened]="true">
+    <mat-toolbar class="sidenav-toolbar">
+      <span>Menú Principal</span>
+    </mat-toolbar>
+    <mat-nav-list>
+      <a mat-list-item routerLink="/dashboard" routerLinkActive="active-link">
+        <mat-icon>dashboard</mat-icon>
+        <span>Dashboard</span>
+      </a>
+      <a mat-list-item routerLink="/solicitudes" routerLinkActive="active-link">
+        <mat-icon>assignment</mat-icon>
+        <span>Solicitudes</span>
+      </a>
+      <a mat-list-item routerLink="/candidatos" routerLinkActive="active-link">
+        <mat-icon>people</mat-icon>
+        <span>Candidatos</span>
+      </a>
+      <a mat-list-item routerLink="/tipos-estudio" routerLinkActive="active-link">
+        <mat-icon>school</mat-icon>
+        <span>Tipos de Estudio</span>
+      </a>
+      <mat-divider></mat-divider>
+      <a mat-list-item (click)="logout()">
+        <mat-icon>exit_to_app</mat-icon>
+        <span>Cerrar Sesión</span>
+      </a>
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar color="primary" class="main-toolbar">
+      <button mat-icon-button (click)="drawer.toggle()">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <span class="toolbar-title">Sistema de Gestión de Solicitudes</span>
+      <span class="toolbar-spacer"></span>
+      <button mat-icon-button [matMenuTriggerFor]="userMenu">
+        <mat-icon>account_circle</mat-icon>
+      </button>
+      <mat-menu #userMenu="matMenu">
+        <button mat-menu-item (click)="openProfileDialog()">
+          <mat-icon>person</mat-icon>
+          <span>Mi Perfil</span>
+        </button>
+        <button mat-menu-item (click)="openSettingsDialog()">
+          <mat-icon>settings</mat-icon>
+          <span>Configuración</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <div class="content-container">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

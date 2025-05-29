@@ -13,3 +13,175 @@
 .float-end {
     float: right;
 }
+
+.sidenav-container {
+  height: 100vh;
+}
+
+.sidenav {
+  width: 250px;
+  background-color: #fafafa;
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.sidenav-toolbar {
+  background-color: var(--primary-color);
+  color: white;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+}
+
+.main-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.toolbar-title {
+  margin-left: 16px;
+  font-size: 1.2rem;
+}
+
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.content-container {
+  padding: 20px;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+  background-color: var(--background-color);
+}
+
+mat-nav-list {
+  padding-top: 8px;
+}
+
+mat-nav-list a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: var(--text-color);
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+mat-nav-list a:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.active-link {
+  background-color: rgba(63, 81, 181, 0.1);
+  color: var(--primary-color);
+}
+
+.active-link mat-icon {
+  color: var(--primary-color);
+}
+
+mat-icon {
+  margin-right: 8px;
+}
+
+mat-divider {
+  margin: 8px 0;
+}
+
+@media (max-width: 768px) {
+  .sidenav {
+    width: 200px;
+  }
+
+  .toolbar-title {
+    font-size: 1rem;
+  }
+}
+
+/* Estilos para los diálogos */
+.dialog-container {
+  padding: 20px;
+}
+
+.dialog-title {
+  margin-bottom: 20px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+/* Estilos para las tarjetas del dashboard */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.dashboard-card {
+  background: white;
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--box-shadow);
+}
+
+.dashboard-card-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+  color: var(--primary-color);
+}
+
+.dashboard-card-content {
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--text-color);
+}
+
+/* Estilos para las tablas */
+.mat-table {
+  width: 100%;
+  background: white;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.mat-header-cell {
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: 500;
+}
+
+.mat-row:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* Estilos para los formularios */
+.form-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+.form-title {
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin-bottom: 24px;
+  color: var(--primary-color);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}

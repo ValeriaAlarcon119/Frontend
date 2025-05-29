@@ -1,38 +1,90 @@
-<h2 style="text-align: center; margin-top: 40px; margin-bottom: 30px;">Conteo de Solicitudes por Estado</h2>
-
-<div style="display: flex; justify-content: center; gap: 20px; margin-top: 40px;">
-  <div *ngFor="let estado of conteoSolicitudes | keyvalue" 
-       [ngStyle]="{
-         'background-color': estado.key === 'completado' ? '#A3C1DA' : 
-                             estado.key === 'en_proceso' ? '#B0B3B8' : 
-                             estado.key === 'pendiente' ? '#B2E0B2' : '#E0E0E0', 
-         'padding': '20px', 
-         'border-radius': '5px', 
-         'width': '150px', 
-         'text-align': 'center'}">
-    <p style="font-weight: bold;">
-      EN ESTADO {{ estado.key | uppercase }} HAY {{ estado.value }} SOLICITUDES
-    </p>
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1>Dashboard</h1>
+    <p class="welcome-message">Bienvenido al Sistema de Gestión de Solicitudes</p>
   </div>
-</div>
 
-<table class="table table-striped text-center mt-4" style="max-width: 450px; margin: 120px auto;">
-  <thead class="table-dark">
-    <tr>
-      <th>Estado</th>
-      <th>Conteo</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let estado of estados">
-      <td>{{ estado | titlecase }}</td>
-      <td>{{ conteoSolicitudes[estado] || 0 }}</td>
-    </tr>
-  </tbody>
-</table>
+  <div class="dashboard-grid">
+    <mat-card class="dashboard-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>assignment</mat-icon>
+        <mat-card-title>Total Solicitudes</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="card-value">{{ totalSolicitudes }}</div>
+        <div class="card-subtitle">Solicitudes registradas</div>
+      </mat-card-content>
+    </mat-card>
 
-<div class="text-center mb-4" style="margin-top: 100px;">
-  <button class="btn btn-outline-primary" (click)="navigateToSolicitudes()" style="margin-right: 15px;">Solicitudes</button>
-  <button class="btn btn-outline-primary" (click)="navigateToCandidatos()" style="margin-right: 15px;">Candidatos</button>
-  <button class="btn btn-outline-primary" (click)="navigateToTiposEstudio()">Tipos de Estudio</button>
+    <mat-card class="dashboard-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>people</mat-icon>
+        <mat-card-title>Total Candidatos</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="card-value">{{ totalCandidatos }}</div>
+        <div class="card-subtitle">Candidatos registrados</div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="dashboard-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>school</mat-icon>
+        <mat-card-title>Tipos de Estudio</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="card-value">{{ totalTiposEstudio }}</div>
+        <div class="card-subtitle">Tipos de estudio disponibles</div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="dashboard-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>pending_actions</mat-icon>
+        <mat-card-title>Solicitudes Pendientes</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="card-value">{{ solicitudesPendientes }}</div>
+        <div class="card-subtitle">Por revisar</div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="dashboard-charts">
+    <mat-card class="chart-card">
+      <mat-card-header>
+        <mat-card-title>Estado de Solicitudes</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <canvas id="solicitudesChart"></canvas>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="chart-card">
+      <mat-card-header>
+        <mat-card-title>Tipos de Estudio más Solicitados</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <canvas id="tiposEstudioChart"></canvas>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="recent-activity">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Actividad Reciente</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-list>
+          <mat-list-item *ngFor="let actividad of actividadesRecientes">
+            <mat-icon matListItemIcon>{{ actividad.icono }}</mat-icon>
+            <div matListItemTitle>{{ actividad.titulo }}</div>
+            <div matListItemLine>{{ actividad.descripcion }}</div>
+            <div matListItemMeta>{{ actividad.fecha | date:'short' }}</div>
+          </mat-list-item>
+        </mat-list>
+      </mat-card-content>
+    </mat-card>
+  </div>
 </div>

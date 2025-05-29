@@ -1,19 +1,54 @@
-import { Injectable } from '@angular/core';
-import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpErrorResponse } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { catchError, throwError, switchMap } from 'rxjs';
+import { AuthService } from '../services/auth.service';
+import { Router } from '@angular/router';
 
-@Injectable()
-export class AuthInterceptor implements HttpInterceptor {
-  intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const token = localStorage.getItem('token');
-    if (token) {
-      request = request.clone({
-        setHeaders: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-    }
-    return next.handle(request);
+export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  const token = authService.getToken();
+
+  // No interceptar las rutas de autenticación
+  if (req.url.includes('/auth/')) {
+    return next(req);
   }
-}
+
+  if (token) {
+    const cloned = req.clone({
+      headers: req.headers.set('Authorization', `Bearer ${token}`)
+    });
+
+    return next(cloned).pipe(
+      catchError((error: HttpErrorResponse) => {
+        if (error.status === 401) {
+          // Si el token expiró, intentar refrescarlo
+          if (req.url.includes('/auth/refresh')) {
+            // Si ya estamos intentando refrescar el token, cerrar sesión
+            authService.logout();
+            return throwError(() => error);
+          }
+
+          // Intentar refrescar el token
+          return authService.refreshToken().pipe(
+            switchMap(response => {
+              // Reintentar la petición original con el nuevo token
+              const newRequest = req.clone({
+                headers: req.headers.set('Authorization', `Bearer ${response.token}`)
+              });
+              return next(newRequest);
+            }),
+            catchError(refreshError => {
+              // Si falla el refresh, cerrar sesión
+              authService.logout();
+              return throwError(() => refreshError);
+            })
+          );
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  return next(req);
+};
